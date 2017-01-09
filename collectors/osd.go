@@ -1,6 +1,7 @@
 package collectors
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -295,9 +296,13 @@ func (o *OSDCollector) collect() error {
 		log.Println("[ERROR] Unable to collect data from ceph osd df", err)
 		return err
 	}
-
+	buf = bytes.Replace(buf, []byte(":NaN"), []byte(":null"), -1)
+	buf = bytes.Replace(buf, []byte(":-nan"), []byte(":null"), -1)
+	buf = bytes.Replace(buf, []byte(":+nan"), []byte(":null"), -1)
+	buf = bytes.Replace(buf, []byte(":nan"), []byte(":null"), -1)
 	osdDF := &cephOSDDF{}
 	if err := json.Unmarshal(buf, osdDF); err != nil {
+		log.Printf("%s Xerrored:\n%s", cmd, string(buf))
 		return err
 	}
 
@@ -411,6 +416,7 @@ func (o *OSDCollector) collectOSDPerf() error {
 
 	osdPerf := &cephPerfStat{}
 	if err := json.Unmarshal(buf, osdPerf); err != nil {
+		log.Printf("%s errored:\n%s", osdPerfCmd, string(buf))
 		return err
 	}
 
@@ -447,6 +453,7 @@ func (o *OSDCollector) collectOSDDump() error {
 
 	osdDump := &cephOSDDump{}
 	if err := json.Unmarshal(buff, osdDump); err != nil {
+		log.Printf("%s errored:\n%s", osdDumpCmd, string(buff))
 		return err
 	}
 
